@@ -42,7 +42,7 @@ var app = http.createServer(function(request,response){
                 
                   var option = `<a href="/create">create</a>`;
                   var list = template.LIST(results);
-                  var html = template.HTML(title, list, description, option);                   
+                  var html = template.HTML(title, list, option, `<h2>${title}</h2>${description}` );                   
                     
                   response.writeHead(200);
                   response.end(html);
@@ -72,7 +72,7 @@ var app = http.createServer(function(request,response){
                         <input type = "submit" value = "delete">
                       </form> `;
                     var list = template.LIST(results);
-                    var html = template.HTML(title, list, description, option);                   
+                    var html = template.HTML(title, list, option,  `<h2>${title}</h2>${description}`);                   
                       
                     response.writeHead(200);
                     response.end(html);
@@ -97,26 +97,55 @@ var app = http.createServer(function(request,response){
             }
         }
         else if (path_name =='/create') {
-            fs.readdir('./data', function(error, filelist){
-                var option = `
-                    <form action="/create_process" method="post">
-                      <p><input type="text" name="title" placeholder="title"></p>
-                      <p>
-                        <textarea name="description" placeholder="description"></textarea>
-                      </p>
-                      <p>
-                        <input type="submit">
-                      </p>
-                    </form>
-                  `;
-                var title = 'WEB - create';
-                var list = template.LIST(filelist);
-                var html = template.HTML(title, list, option,'');
+            // fs.readdir('./data', function(error, filelist){
+            //     var option = `
+            //         <form action="/create_process" method="post">
+            //           <p><input type="text" name="title" placeholder="title"></p>
+            //           <p>
+            //             <textarea name="description" placeholder="description"></textarea>
+            //           </p>
+            //           <p>
+            //             <input type="submit">
+            //           </p>
+            //         </form>
+            //       `;
+            //     var title = 'WEB - create';
+            //     var list = template.LIST(filelist);
+            //     var html = template.HTML(title, list, option,'');
                 
+            //     response.writeHead(200);
+            //     response.end(html);
+            //   });
+            db.query(`SELECT * FROM topic`, function (error, results){
+              if(error) {
+                console.log(err);
+              }
+              //db.query(`INSERT INTO `topic`VALUES(?, ?, ?, ?, ?)`,[id],function (error2, results2){
+               // db.query(`SELECT * FROM topic WHERE id=?`, [queryData.id], function (error2, results2){
+                var title = 'WEB-create';
+                var option = `
+                        <form action="/create_process" method="post">
+                          <p><input type="text" name="title" placeholder="title"></p>
+                          <p>
+                            <textarea name="description" placeholder="description"></textarea>
+                          </p>
+                          <p>
+                            <input type="submit">
+                          </p>
+                        </form>
+                      `;
+              
+               
+              
+                
+                var list = template.LIST(results);
+                var html = template.HTML(title, list, option, '');                   
+                console.log(results);
                 response.writeHead(200);
                 response.end(html);
+            
               });
-
+       
         }
         else if (path_name =='/create_process') { //TODO: 띄어쓰기 적용시키기.
                 var body = '';
@@ -127,9 +156,15 @@ var app = http.createServer(function(request,response){
                         var post = qs.parse(body);
                         var title = post.title;
                         var description = post.description;                       
-                          fs.writeFile(`./data/${title}`,`${description}`, function(){
-                              response.writeHead(302, {Location: `/?id=${title}`});
-                              response.end('success');
+                        db.query(`
+                              INSERT INTO topic (title, description, created, author_id) 
+                                  VALUES(?, ?, now(), 1)`,
+                             [title, description], function (error, results){
+                          if(error) {
+                            throw error;
+                          }
+                          response.writeHead(302, {Location: `/?id=${results.insertId}`});
+                          response.end('success');
                     });
 
                 });                
